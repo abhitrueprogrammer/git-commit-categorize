@@ -1,12 +1,25 @@
 ﻿using Microsoft.ML.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
+using Microsoft.ML;
 
 namespace GitCommitAnalyser
 {
+    public class CommitMLData
+    {
+        public string Repository { get; set; }
+        public string CommitName { get; set; }
+        public string CommitDescription { get; set; }
+    }
+
+    public class CommitPredictionWithData : CommitMLData
+    {
+        [ColumnName("PredictedLabel")]
+        public uint PredictedClusterId { get; set; }
+        
+        [ColumnName("Score")]
+        public float[] Distances { get; set; }
+    }
+
     public class EDA
     {
 
@@ -19,6 +32,112 @@ namespace GitCommitAnalyser
 
     internal class Analyser
     {
+        public static IDataView LoadJsonDataForML(MLContext mlContext, string jsonFilePath)
+        {
+            if (!File.Exists(jsonFilePath))
+            {
+                Console.WriteLine($"File not found: {jsonFilePath}");
+                return null;
+            }
 
+            var json = File.ReadAllText(jsonFilePath);
+            var repoCommits = JsonSerializer.Deserialize<Dictionary<string, List<CommitInfo>>>(json);
+            var flatData = new List<CommitMLData>();
+
+            if (repoCommits != null)
+            {
+                foreach (var kvp in repoCommits)
+                {
+                    string repoName = kvp.Key;
+                    if (kvp.Value == null) continue;
+                    
+                    foreach (var commit in kvp.Value)
+                    {
+                        flatData.Add(new CommitMLData
+                        {
+                            Repository = repoName,
+                            CommitName = commit.CommitName ?? string.Empty,
+                            CommitDescription = commit.CommitDescription ?? string.Empty
+                        });
+                    }
+                }
+            }
+
+            return mlContext.Data.LoadFromEnumerable(flatData);
+        }
+
+        public static DataOperationsCatalog.TrainTestData SplitData(MLContext mlContext, IDataView data)
+        {
+            return mlContext.Data.TrainTestSplit(data, testFraction: 0.2);
+        }
+
+        public static IEstimator<ITransformer> FeaturizeText(MLContext mlContext)
+        {
+            return mlContext.Transforms.Text.FeaturizeText("Features", nameof(CommitMLData.CommitName));
+        }
+
+        public static int GetOrFindBestK(MLContext mlContext, IDataView trainData, IDataView testData, IEstimator<ITransformer> featurizer, string kFilePath)
+        {
+            if (File.Exists(kFilePath))
+            {
+                if (int.TryParse(File.ReadAllText(kFilePath), out int savedK))
+                {
+                    Console.WriteLine($"Loaded best K = {savedK} from file {kFilePath}.");
+                    return savedK;
+                }
+            }
+
+            Console.WriteLine("Finding best K via Grid Search...");
+            int bestK = 2;
+            double bestMetric = double.MaxValue; // Lower Davies-Bouldin is better for measuring clustering quality
+
+            for (int k = 2; k <= 10; k++)
+            {
+                var pipeline = featurizer.Append(mlContext.Clustering.Trainers.KMeans(featureColumnName: "Features", numberOfClusters: k));
+                var model = pipeline.Fit(trainData);
+                
+                var predictions = model.Transform(testData);
+                var metrics = mlContext.Clustering.Evaluate(predictions, labelColumnName: null, scoreColumnName: "Score", featureColumnName: "Features");
+
+                Console.WriteLine($"K = {k} | Davies-Bouldin: {metrics.DaviesBouldinIndex:F4} | Avg Distance: {metrics.AverageDistance:F4}");
+
+                if (double.IsNaN(metrics.DaviesBouldinIndex)) continue;
+
+                // We prioritize Davies-Bouldin index for clustering quality
+                if (metrics.DaviesBouldinIndex < bestMetric)
+                {
+                    bestMetric = metrics.DaviesBouldinIndex;
+                    bestK = k;
+                }
+            }
+
+            Console.WriteLine($"Best K found: {bestK}. Saving to {kFilePath}.");
+            File.WriteAllText(kFilePath, bestK.ToString());
+            return bestK;
+        }
+
+        public static ITransformer TrainKMeansClusterer(MLContext mlContext, IDataView trainData, IEstimator<ITransformer> featurizer, int k)
+        {
+            var pipeline = featurizer.Append(mlContext.Clustering.Trainers.KMeans(featureColumnName: "Features", numberOfClusters: k));
+            return pipeline.Fit(trainData);
+        }
+
+        public static void PrintClusterExamples(MLContext mlContext, IDataView data, ITransformer model)
+        {
+            var predictions = model.Transform(data);
+            var results = mlContext.Data.CreateEnumerable<CommitPredictionWithData>(predictions, reuseRowObject: false).ToList();
+
+            var clusters = results.GroupBy(x => x.PredictedClusterId).OrderBy(g => g.Key);
+
+            Console.WriteLine("\n--- Cluster Examples ---");
+            foreach (var cluster in clusters)
+            {
+                Console.WriteLine($"\nCluster {cluster.Key}:");
+                foreach (var example in cluster.Take(2)) // 2 examples each from each cluster
+                {
+                    Console.WriteLine($"  - [{example.Repository}] {example.CommitName}");
+                }
+            }
+        }
     }
 }
