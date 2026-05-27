@@ -35,7 +35,7 @@ namespace GitCommitAnalyser
                 var featurizer = Analyser.FeaturizeText(mlContext);
 
                 // 4. Find Best K using Grid Search or load from file
-                int bestK = Analyser.GetOrFindBestK(mlContext, split.TrainSet, split.TestSet, featurizer, kFilePath);
+                int bestK = Analyser.GetOrFindBestK(mlContext, split.TrainSet, featurizer, kFilePath);
 
                 // 5. Train KMeans Clusterer
                 var model = Analyser.TrainKMeansClusterer(mlContext, split.TrainSet, featurizer, bestK);

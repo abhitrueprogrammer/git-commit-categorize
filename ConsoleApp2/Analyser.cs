@@ -69,7 +69,7 @@ namespace GitCommitAnalyser
             return mlContext.Transforms.Text.FeaturizeText(FeaturesColumnName, nameof(CommitMLData.CommitName));
         }
 
-        public static int GetOrFindBestK(MLContext mlContext, IDataView trainData, IDataView testData, IEstimator<ITransformer> featurizer, string kFilePath)
+        public static int GetOrFindBestK(MLContext mlContext, IDataView trainData, IEstimator<ITransformer> featurizer, string kFilePath)
         {
             if (File.Exists(kFilePath))
             {
@@ -80,16 +80,20 @@ namespace GitCommitAnalyser
                 }
             }
 
-            Console.WriteLine("Finding best K via Grid Search...");
+            Console.WriteLine("Finding best K via Grid Search using validation split...");
+            var split = mlContext.Data.TrainTestSplit(trainData, testFraction: 0.2);
+            var subTrainData = split.TrainSet;
+            var validationData = split.TestSet;
+
             int bestK = 2;
             double bestMetric = double.MaxValue; // Lower Davies-Bouldin is better for measuring clustering quality
 
             for (int k = 2; k <= 10; k++)
             {
                 var pipeline = featurizer.Append(mlContext.Clustering.Trainers.KMeans(featureColumnName: FeaturesColumnName, numberOfClusters: k));
-                var model = pipeline.Fit(trainData);
-                
-                var predictions = model.Transform(testData);
+                var model = pipeline.Fit(subTrainData);
+
+                var predictions = model.Transform(validationData);
                 var metrics = mlContext.Clustering.Evaluate(predictions, labelColumnName: null, scoreColumnName: "Score", featureColumnName: FeaturesColumnName);
 
                 Console.WriteLine($"K = {k} | Davies-Bouldin: {metrics.DaviesBouldinIndex:F4} | Avg Distance: {metrics.AverageDistance:F4}");
