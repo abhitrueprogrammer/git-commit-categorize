@@ -41,7 +41,7 @@ namespace GitCommitAnalyser
                 var model = Analyser.TrainKMeansClusterer(mlContext, split.TrainSet, featurizer, bestK);
 
                 // 6. Print 2 examples from each cluster
-                Analyser.PrintClusterExamples(mlContext, dataView, model);
+                Analyser.PrintClusterExamples(mlContext, split.TrainSet, model);
             }
         }
     }
