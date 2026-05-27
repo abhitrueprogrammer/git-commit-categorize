@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Octokit;
 
-namespace ConsoleApp2
+namespace GitCommitAnalyser
 {
     public class CommitFetcher
     {
@@ -24,6 +24,7 @@ namespace ConsoleApp2
             var repoCommits = await FetchRepoCommitsAsync(github, orgName, outputPath);
 
             Console.WriteLine($"Successfully gathered commits across {repoCommits.Count} repositories.");
+
         }
 
         public static async Task<Dictionary<string, List<CommitInfo>>> FetchRepoCommitsAsync(GitHubClient github, string orgName, string filePath, int? maxRepos = null)
