@@ -119,13 +119,18 @@ namespace GitCommitAnalyser
             return pipeline.Fit(trainData);
         }
 
-        public static void PrintClusterExamples(MLContext mlContext, IDataView data, ITransformer model)
+        public static IEnumerable<IGrouping<uint, CommitPredictionWithData>> GetClusters(MLContext mlContext, IDataView data, ITransformer model)
         {
             var predictions = model.Transform(data);
             var results = mlContext.Data.CreateEnumerable<CommitPredictionWithData>(predictions, reuseRowObject: false).ToList();
-
-            var clusters = results.GroupBy(x => x.PredictedClusterId).OrderBy(g => g.Key);
-
+            return results.GroupBy(x => x.PredictedClusterId).OrderBy(g => g.Key);
+        }
+        public static IEnumerable<IGrouping<uint, CommitPredictionWithData>> PredictClusterNames(IEnumerable<IGrouping<uint, CommitPredictionWithData>> clusters)
+        {
+            return null;
+        }
+        public static void PrintClusterExamples(IEnumerable<IGrouping<uint, CommitPredictionWithData>> clusters)
+        {
             Console.WriteLine("\n--- Cluster Examples ---");
             foreach (var cluster in clusters)
             {
