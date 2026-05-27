@@ -20,18 +20,11 @@ namespace GitCommitAnalyser
         public float[] Distances { get; set; }
     }
 
-    public class EDA
-    {
-
-    }
-    public class DataPoint
-    {
-        [VectorType(2)]
-        public float[] Features { get; set; }
-    }
 
     internal class Analyser
     {
+        private const string FeaturesColumnName = "Features";
+
         public static IDataView LoadJsonDataForML(MLContext mlContext, string jsonFilePath)
         {
             if (!File.Exists(jsonFilePath))
@@ -73,7 +66,7 @@ namespace GitCommitAnalyser
 
         public static IEstimator<ITransformer> FeaturizeText(MLContext mlContext)
         {
-            return mlContext.Transforms.Text.FeaturizeText("Features", nameof(CommitMLData.CommitName));
+            return mlContext.Transforms.Text.FeaturizeText(FeaturesColumnName, nameof(CommitMLData.CommitName));
         }
 
         public static int GetOrFindBestK(MLContext mlContext, IDataView trainData, IDataView testData, IEstimator<ITransformer> featurizer, string kFilePath)
@@ -93,11 +86,11 @@ namespace GitCommitAnalyser
 
             for (int k = 2; k <= 10; k++)
             {
-                var pipeline = featurizer.Append(mlContext.Clustering.Trainers.KMeans(featureColumnName: "Features", numberOfClusters: k));
+                var pipeline = featurizer.Append(mlContext.Clustering.Trainers.KMeans(featureColumnName: FeaturesColumnName, numberOfClusters: k));
                 var model = pipeline.Fit(trainData);
                 
                 var predictions = model.Transform(testData);
-                var metrics = mlContext.Clustering.Evaluate(predictions, labelColumnName: null, scoreColumnName: "Score", featureColumnName: "Features");
+                var metrics = mlContext.Clustering.Evaluate(predictions, labelColumnName: null, scoreColumnName: "Score", featureColumnName: FeaturesColumnName);
 
                 Console.WriteLine($"K = {k} | Davies-Bouldin: {metrics.DaviesBouldinIndex:F4} | Avg Distance: {metrics.AverageDistance:F4}");
 
@@ -118,7 +111,7 @@ namespace GitCommitAnalyser
 
         public static ITransformer TrainKMeansClusterer(MLContext mlContext, IDataView trainData, IEstimator<ITransformer> featurizer, int k)
         {
-            var pipeline = featurizer.Append(mlContext.Clustering.Trainers.KMeans(featureColumnName: "Features", numberOfClusters: k));
+            var pipeline = featurizer.Append(mlContext.Clustering.Trainers.KMeans(featureColumnName: FeaturesColumnName, numberOfClusters: k));
             return pipeline.Fit(trainData);
         }
 
