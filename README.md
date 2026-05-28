@@ -1,9 +1,8 @@
-# ?? Git Commit Categorizer & ML.NET Analyser
 # Git Commit Categorizer & ML.NET Analyser
 
 **Ever stared at a terminal wondering if your commit should be `feat:`, `fix:`, or `chore:`? Stop guessing.**
 
-This tool acts as your personalized, AI-powered commit assistant. Rather than forcing you strictly into generic conventional commits, it fetches *your* organization's actual historical commit data, uses **Machine Learning (ML.NET)** to find natural patterns in how your team works, and leverages **Google Gemini AI** to automatically assign human-readable labels to those patterns. Finally, it provides an interactive prompt to correctly format your new commits on the fly!
+This tool acts as your personalized, AI-powered commit assistant. Rather than forcing you strictly into generic conventional commits, it fetches *your* organization's actual historical commit data, uses **Machine Learning (ML.NET)** to find natural patterns(using K-means clustering) in how your team works, and leverages **Google Gemini AI** to automatically assign human-readable labels to those patterns. Finally, it provides an interactive prompt to correctly format your new commits on the fly!
 
 ## Why It's Awesome
 - **Fully Autonomous ML Pipeline**: Automatically scales to your data. It uses Grid Search evaluating the Davies-Bouldin index to dynamically find the optimal number of categories (clusters) for your specific repositories. It even algorithmically penalizes outliers to naturally lean towards a readable 4-8 tag cluster size.
