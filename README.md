@@ -1,22 +1,22 @@
-# Git Commit Categorize & ML.NET Analyser
+# ?? Git Commit Categorizer & ML.NET Analyser
+# Git Commit Categorizer & ML.NET Analyser
 
-A way to predict commit category using custom organisation data. Instead of thinking whether to type feat: spam or fix: spam, let AI/ML predict it for you!
+**Ever stared at a terminal wondering if your commit should be `feat:`, `fix:`, or `chore:`? Stop guessing.**
 
-An intelligent, console-based application built with **.NET 9** that automatically fetches GitHub commit messages, categorizes them using **ML.NET** (K-Means Clustering), and intelligently labels those categories in plain English using the **Google Gemini API**. Finally, it provides an interactive tool to format new commit messages based on the trained model.
+This tool acts as your personalized, AI-powered commit assistant. Rather than forcing you strictly into generic conventional commits, it fetches *your* organization's actual historical commit data, uses **Machine Learning (ML.NET)** to find natural patterns in how your team works, and leverages **Google Gemini AI** to automatically assign human-readable labels to those patterns. Finally, it provides an interactive prompt to correctly format your new commits on the fly!
 
-## ? Features
-- **GitHub Integration:** Fetches commits from repos in a target GitHub Organization.
-- **Data Caching & Hashing:** Efficiently caches your datasets and only invalidates / re-trains when new data arrives.
-- **ML.NET K-Means Clustering:** Learns from your commit history and automatically searches for the optimal $K$ value (number of clusters) using Grid Search and the Davies-Bouldin index.
-- **Gemini AI Labeling:** Employs the `gemini-2.5-flash` model to analyze representative commits from each cluster and dynamically assigns highly accurate, human-readable labels (e.g., "UI Refactoring", "Bug Fixes").
-- **Interactive Formatting:** Drop into an interactive command-line session to type new commit messages and instantly see them cleanly formatted as `Label: {commit}`.
+## Why It's Awesome
+- **Fully Autonomous ML Pipeline**: Automatically scales to your data. It uses Grid Search evaluating the Davies-Bouldin index to dynamically find the optimal number of categories (clusters) for your specific repositories. It even algorithmically penalizes outliers to naturally lean towards a readable 4-8 tag cluster size.
+- **Smart & Configurable AI Labeling**: Uses the latest `gemini-2.5-flash` model algorithm to semantically label clusters (e.g., "Dependency Updates", "UI Fixes"). Features 4 configurable execution modes (`Hybrid`, `SinglePrompt`, `PerCluster`, `LocalOnly`) to tightly control API quotas and fallback natively on smart local heuristic algorithms!
+- **State-of-the-Art Reliability**: Includes automatic cryptographic hashing (`SHA256`) of your datasets. If the data hasn't changed, ML training is completely bypassed and models/labels load in milliseconds from disk. Plus, native exponential backoff protects against Gemini server rate limiting.
+- **Interactive Output**: Drop seamlessly into a real-time local terminal loop to instantly predict and format your next commit message against the running AI logic.
 
-## ?? Prerequisites
+## Prerequisites
 1. [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-2. A **GitHub Personal Access Token** (to fetch commits securely)
-3. A **Google Gemini API Key** (for cluster labeling inference)
+2. A **GitHub Personal Access Token** (to securely fetch organization commits)
+3. A **Google Gemini API Key** (for cluster semantic naming inferencing)
 
-## ?? Setup & Installation
+## Setup & Installation
 
 1. **Clone the repository:**
    ```bash
@@ -38,7 +38,7 @@ An intelligent, console-based application built with **.NET 9** that automatical
    dotnet build
    ```
 
-## ?? Usage
+## Usage
 
 Run the project directly via the .NET CLI:
 ```bash
@@ -47,13 +47,16 @@ dotnet run
 
 ### What happens during runtime?
 1. The app will pull and cache your JSON dataset.
-2. If the data is new or uncached, ML.NET prepares the data (80/20 train validation split) and extracts text features. Otherwise, it efficiently reloads the cached model!
+2. If the data is new or uncached, ML.NET prepares the data (80/20 train validation split) and extracts text features. Otherwise, it efficiently reloads the cached hash model!
 
 ![Reloading Model and Cache](image/reload_model_clustername.png)
-3. A Grid Search evaluates clusters $K=2$ through $10$, identifies the best clustering structure, and saves the trained ML model globally (`kmeans_model.zip`).
+
+3. A Grid Search evaluates clusters, applies math penalties to prefer $K=4-8$, identifies the best valid structure, and saves the trained ML model globally (`kmeans_model.zip`).
+
 ![Cluster Recognition](image/cluster_recognition.png)
 
-4. The Gemini LLM will connect and predict human-readable category names.
+4. The Gemini LLM (or the local heuristic fallback) connects and predicts a descriptive human-readable category for the newly structured clusters.
+
 ![Cluster Examples](image/cluster_examples.png)
 
 5. You will enter the **Interactive Labeler**:
@@ -71,9 +74,9 @@ Formatted => UI Bug Fixes: fix padding on the login button
 
 ![Interactive Formatting](image/interactive_commit_formatting.png)
 
-## ?? Architecture Overview
-- `Program.cs`: Orchestrates data loading, caching/hashing checks, training, and triggers interactive modes.
-- `CommitFetcher.cs`: Handles standard Octokit GitHub authentications and downloading.
-- `Analyser.cs`: Contains the heavy ML.NET workflow (Splitting, Featurizing text, Grid Search K-Values).
-- `AiClusterLabeler.cs`: Directly handles Gemini API requests and labeling dictionary cache management.
-- `CommitInteractiveLabeler.cs`: Manages dynamic, real-time prediction and output formatting.
+## Architecture Overview
+- `Program.cs`: Orchestrates data loading, caching/hashing invalidation checks, ML model loading, and triggers terminal execution.
+- `CommitFetcher.cs`: Handles standard Octokit GitHub authentications and remote API downloading.
+- `Analyser.cs`: Contains the heavy ML.NET isolated workflow (Splitting, Featurizing text, Penalized Grid Search K-Values).
+- `AiClusterLabeler.cs`: Contains the robust Gemini API pipeline, fallback heuristics, multi-mode inference limits, and resilient exponential backoff retry circuits.
+- `CommitInteractiveLabeler.cs`: Manages dynamic, real-time prediction formatting mapping.
