@@ -13,7 +13,7 @@ namespace GitCommitAnalyser
     {
         private const int PROCESSED_COUNT = 10; // Adjust this value as needed to control how often the intermediate results are saved
 
-        public static async Task RunAsync(string orgName, string outputPath)
+        public static async Task RunAsync(string orgName, string outputPath, int? maxRepos = null)
         {
             var github = new GitHubClient(new ProductHeaderValue("GitCommitAnalyser"));
             if (!ConfigureAuthentication(github))
@@ -21,7 +21,7 @@ namespace GitCommitAnalyser
                 return;
             }
 
-            var repoCommits = await FetchRepoCommitsAsync(github, orgName, outputPath);
+            var repoCommits = await FetchRepoCommitsAsync(github, orgName, outputPath, maxRepos);
 
             Console.WriteLine($"Successfully gathered commits across {repoCommits.Count} repositories.");
 
