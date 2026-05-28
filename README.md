@@ -15,7 +15,13 @@ This tool acts as your personalized, AI-powered commit assistant. Rather than fo
 2. A **GitHub Personal Access Token** (to securely fetch organization commits)
 3. A **Google Gemini API Key** (for cluster semantic naming inferencing)
 
-## Setup & Installation
+## Using the Release (Quick Start)
+
+1. **Install .NET**: Ensure you have the [.NET 9 Runtime or SDK](https://dotnet.microsoft.com/download/dotnet/9.0) installed.
+2. **Download**: Go to [v0.9-alpha](https://github.com/abhitrueprogrammer/git-commit-categorize/releases/tag/v0.9-alpha) and download the `.zip` file for your platform.
+3. **Unzip & Run**: Extract the zip, setup your `.env` file (see below), and run the executable directly in the unzipped folder.
+
+## Setup & Installation (Manual Build)
 
 1. **Clone the repository:**
    ```bash
