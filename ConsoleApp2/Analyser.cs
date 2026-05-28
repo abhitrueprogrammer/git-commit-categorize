@@ -110,10 +110,19 @@ namespace GitCommitAnalyser
 
                 if (double.IsNaN(metrics.DaviesBouldinIndex)) continue;
 
-                // We prioritize Davies-Bouldin index for clustering quality
-                if (metrics.DaviesBouldinIndex < bestMetric)
+                // Apply a penalty multiplier to give preference to K values between 4 and 8
+                // Since lower Davies-Bouldin index is better, we artificially inflate the score 
+                // for K values outside our preferred range to discourage the model from picking them 
+                // unless they are significantly better.
+                double adjustedMetric = metrics.DaviesBouldinIndex;
+                if (k < 4 || k > 8)
                 {
-                    bestMetric = metrics.DaviesBouldinIndex;
+                    adjustedMetric *= 1.75; // 75% penalty
+                }
+
+                if (adjustedMetric < bestMetric)
+                {
+                    bestMetric = adjustedMetric;
                     bestK = k;
                 }
             }
@@ -136,14 +145,14 @@ namespace GitCommitAnalyser
             return results.GroupBy(x => x.PredictedClusterId).OrderBy(g => g.Key);
         }
 
-        public static void PrintClusterExamples(IEnumerable<IGrouping<uint, CommitPredictionWithData>> clusters, Dictionary<uint, string> clusterNames = null)
+        public static void PrintClusterExamples(IEnumerable<IGrouping<uint, CommitPredictionWithData>> clusters, Dictionary<uint, string> clusterNames = null, int exampleCount = 2)
         {
             Console.WriteLine("\n--- Cluster Examples ---");
             foreach (var cluster in clusters)
             {
                 var name = clusterNames != null && clusterNames.TryGetValue(cluster.Key, out var cn) ? cn: $"Cluster {cluster.Key}";
                 Console.WriteLine($"\n{name}:");
-                foreach (var example in cluster.Take(2)) // 2 examples each from each cluster
+                foreach (var example in cluster.Take(exampleCount)) 
                 {
                     Console.WriteLine($"  - [{example.Repository}] {example.CommitName}");
                 }
