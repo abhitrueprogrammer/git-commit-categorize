@@ -1,4 +1,3 @@
-# ?? Git Commit Categorizer & ML.NET Analyser
 # Git Commit Categorizer & ML.NET Analyser
 
 **Ever stared at a terminal wondering if your commit should be `feat:`, `fix:`, or `chore:`? Stop guessing.**
