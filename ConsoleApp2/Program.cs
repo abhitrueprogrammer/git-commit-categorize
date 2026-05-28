@@ -76,6 +76,10 @@ namespace GitCommitAnalyser
 
                 // 7. Print examples from each cluster with readable names
                 Analyser.PrintClusterExamples(clusters, clusterNames);
+
+                // 8. Start the interactive labeling loop
+                var interactiveLabeler = new CommitInteractiveLabeler(mlContext, model, clusterNames);
+                interactiveLabeler.StartInteractiveLoop();
             }
         }
     }
