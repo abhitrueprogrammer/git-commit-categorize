@@ -72,7 +72,7 @@ namespace GitCommitAnalyser
                 var clusters = Analyser.GetClusters(mlContext, split.TrainSet, model);
 
                 // 6. Predict cluster names via Gemini (or load from cache)
-                var clusterNames = await Analyser.PredictClusterNamesAsync(clusters, labelsFilePath);
+                var clusterNames = await AiClusterLabeler.PredictClusterNamesAsync(clusters, labelsFilePath);
 
                 // 7. Print examples from each cluster with readable names
                 Analyser.PrintClusterExamples(clusters, clusterNames);

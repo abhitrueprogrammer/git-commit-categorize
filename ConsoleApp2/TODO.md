@@ -3,3 +3,4 @@
 3. Try Kmeans visualisation
 4. Label clusters using LLM.
 5. Find a way to add lables to the trained model so that we can use it for classification as well.
+6. Add a CLI to input any text and classify it using the trained model. 
